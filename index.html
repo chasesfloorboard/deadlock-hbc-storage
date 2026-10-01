@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HBC storage</title>
+<!--
+  Storage for the Deadlock healthbar colors mod. The game opens this page in a
+  hidden browser panel and talks to it through the URL hash; the page answers
+  by setting document.title. Colors stay in this browser's localStorage, and
+  the hash is never sent to the server.
+
+    #ready&t=N        -> HBC_READY|<host>|N
+    #load&t=N         -> HBC_LOAD|<uri-encoded value>|N
+    #save=<value>&t=N -> HBC_SAVED|ok|N
+-->
+</head>
+<body>
+<script>
+(function () {
+  var KEY = "hbcolors_v1";
+
+  function handle() {
+    var hash = location.hash.slice(1);
+    var nonce = (/(?:^|&)t=(\d+)/.exec(hash) || [])[1] || String(Date.now());
+    var cmd = hash.split("&")[0];
+    try {
+      if (cmd.indexOf("save=") === 0) {
+        localStorage.setItem(KEY, decodeURIComponent(cmd.slice(5)));
+        document.title = "HBC_SAVED|ok|" + nonce;
+      } else if (cmd === "load") {
+        document.title = "HBC_LOAD|" + encodeURIComponent(localStorage.getItem(KEY) || "") + "|" + nonce;
+      } else {
+        document.title = "HBC_READY|" + location.host + "|" + nonce;
+      }
+    } catch (e) {
+      document.title = "HBC_ERROR|" + e + "|" + nonce;
+    }
+  }
+
+  window.addEventListener("hashchange", handle);
+  handle();
+})();
+</script>
+</body>
+</html>
