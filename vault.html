@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>hbcv:0:boot:</title>
+<!--
+  Color vault for the Deadlock healthbar colors mod (protocol 2).
+
+  The mod keeps this page in an off-screen browser panel. Each request is the
+  URL fragment "<seq>/<verb>[/<data>]"; the answer is the document title
+  "hbcv:<seq>:<verb>:<data>", with <data> URI-encoded both ways.
+
+    <seq>/hi          -> hbcv:<seq>:hi:2
+    <seq>/get         -> hbcv:<seq>:get:<stored text, empty if none>
+    <seq>/put/<text>  -> hbcv:<seq>:put:ok
+    anything failing  -> hbcv:<seq>:fail:<reason>
+
+  Colors live in this browser's localStorage. The fragment never leaves the
+  game, so nothing is uploaded. The key matches index.html (protocol 1), so
+  colors saved by older releases carry over.
+-->
+<style>html, body { margin: 0; background: #000; }</style>
+</head>
+<body>
+<script>
+"use strict";
+var VAULT_KEY = "hbcolors_v1";
+
+var verbs = {
+  hi: function () { return "2"; },
+  get: function () { return localStorage.getItem(VAULT_KEY) || ""; },
+  put: function (text) { localStorage.setItem(VAULT_KEY, text); return "ok"; }
+};
+
+function answer() {
+  var parts = location.hash.replace(/^#/, "").split("/");
+  var seq = parts[0] || "0";
+  var verb = parts[1] || "hi";
+  var data = parts.length > 2 ? decodeURIComponent(parts.slice(2).join("/")) : "";
+  var out;
+  try {
+    if (!verbs.hasOwnProperty(verb)) throw new Error("unknown verb " + verb);
+    out = verb + ":" + encodeURIComponent(verbs[verb](data));
+  } catch (err) {
+    out = "fail:" + encodeURIComponent(String(err && err.message || err));
+  }
+  document.title = "hbcv:" + seq + ":" + out;
+}
+
+window.onhashchange = answer;
+answer();
+</script>
+</body>
+</html>
